@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>燃燒中的工作區</title>
+<script>
+// 白底／黑底的約定（劇本板 repo 的 spec〈入口頁〉：docs/superpowers/specs/2026-11-04-portal-and-editor-polish-design.md）：
+// localStorage 鍵 portal-theme，值只有 light／dark，其他值當作沒有；沒有就跟著 prefers-color-scheme；
+// 套在 <html data-theme>。入口頁是純靜態頁、引用不到劇本板的程式碼，所以同一個約定在劇本板的
+// index.html 與 src/app/theme.ts 各有一份，改這裡就要一起改那邊。在畫面畫出來之前先套好，免得閃一下錯的底色。
+(function () {
+  var theme = null
+  try { theme = window.localStorage.getItem('portal-theme') } catch (e) { theme = null }
+  if (theme !== 'light' && theme !== 'dark') {
+    var dark = typeof window.matchMedia === 'function' && window.matchMedia('(prefers-color-scheme: dark)').matches
+    theme = dark ? 'dark' : 'light'
+  }
+  document.documentElement.setAttribute('data-theme', theme)
+})()
+</script>
+<style>
+:root {
+  --font-body: "Microsoft JhengHei", "Noto Sans TC", "PingFang TC", sans-serif;
+  --font-head: "Noto Serif TC", "Source Han Serif TC", "PMingLiU", "MingLiU", serif;
+  --r: 18px; --r-sm: 10px;
+}
+[data-theme="light"] {
+  --bg: #f3ede2; --bg2: #ebe0cc; --surface: #fffaf1; --surface-2: #f7efe1; --text: #3b3127; --muted: #8b7a68;
+  --line: #e4d6c1; --accent: #b4523a; --accent-ink: #fff8f0; --accent-soft: #f4dfd5; --accent-2: #5e7d6a; --gold: #b08a4a;
+  --shadow: 0 1px 0 #e6d8c3, 0 14px 34px rgba(90, 60, 30, .10);
+  --shadow-hover: 0 1px 0 #e6d8c3, 0 22px 44px rgba(90, 60, 30, .16);
+  --rule: rgba(120, 90, 60, .07);
+  --muted-text: color-mix(in srgb, var(--muted) 65%, var(--text));
+  --accent-text: color-mix(in srgb, var(--accent) 80%, var(--text));
+  --ok-text: color-mix(in srgb, var(--accent-2) 70%, var(--text));
+}
+[data-theme="dark"] {
+  --bg: #1d1915; --bg2: #16120f; --surface: #29231e; --surface-2: #322b24; --text: #efe5d6; --muted: #a8988a;
+  --line: #40372e; --accent: #e08562; --accent-ink: #26170f; --accent-soft: #4a3026; --accent-2: #8fb39b; --gold: #d2ac6a;
+  --shadow: 0 1px 0 #15110d, 0 14px 34px rgba(0, 0, 0, .4);
+  --shadow-hover: 0 1px 0 #15110d, 0 22px 44px rgba(0, 0, 0, .55);
+  --rule: rgba(255, 240, 220, .035);
+  --muted-text: color-mix(in srgb, var(--muted) 85%, var(--text));
+  --accent-text: color-mix(in srgb, var(--accent) 85%, var(--text));
+  --ok-text: var(--accent-2);
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; min-height: 100%; }
+body {
+  font-family: var(--font-body); color: var(--text); line-height: 1.6;
+  background: radial-gradient(120% 80% at 50% 0%, var(--bg) 40%, var(--bg2) 100%) fixed;
+  transition: background .3s, color .3s;
+}
+.frame { min-height: 100vh; display: flex; justify-content: center; }
+.page {
+  container-type: inline-size; width: 100%; min-height: 100vh;
+  /* 稿紙橫線 */
+  background-image: repeating-linear-gradient(transparent 0 31px, var(--rule) 31px 32px);
+}
+
+/* 頂列 */
+.top { display: flex; align-items: center; gap: 12px; padding: 22px 40px; max-width: 1180px; margin: 0 auto; }
+.mark {
+  width: 38px; height: 38px; border-radius: 11px; display: grid; place-items: center;
+  background: var(--accent); color: var(--accent-ink); font-family: var(--font-head); font-size: 19px; font-weight: 700;
+  box-shadow: 0 3px 0 color-mix(in srgb, var(--accent) 60%, #000);
+}
+.brand { font-family: var(--font-head); font-size: 20px; font-weight: 700; letter-spacing: .08em; }
+.spacer { flex: 1; }
+.theme-toggle {
+  display: flex; gap: 2px; padding: 3px; border-radius: 999px; background: var(--surface-2); border: 1px solid var(--line);
+}
+.theme-toggle button {
+  border: 0; background: none; padding: 6px 14px; border-radius: 999px; cursor: pointer; color: var(--muted-text);
+  font: inherit; font-size: 13px; min-height: 34px; white-space: nowrap;
+}
+.theme-toggle button.on { background: var(--surface); color: var(--text); box-shadow: var(--shadow); }
+[data-theme="dark"] .theme-toggle button.on { background: var(--accent-soft); color: var(--accent-text); box-shadow: none; }
+
+/* 標題 */
+.hero { max-width: 1180px; margin: 0 auto; padding: 46px 40px 34px; }
+.eyebrow { color: var(--accent-text); font-size: 13px; letter-spacing: .3em; font-weight: 700; }
+.hero h1 { font-family: var(--font-head); font-size: 44px; margin: 10px 0 10px; letter-spacing: .06em; line-height: 1.25; }
+.hero p { color: var(--muted-text); margin: 0; font-size: 16px; }
+.hero .seal {
+  display: inline-block; margin-left: 10px; vertical-align: middle; transform: rotate(-8deg);
+  border: 2px solid var(--accent); color: var(--accent-text); border-radius: 6px; padding: 0 6px;
+  font-size: 14px; letter-spacing: .1em; font-family: var(--font-head); opacity: .85;
+}
+
+/* 三張卡 */
+.doors {
+  max-width: 1180px; margin: 0 auto; padding: 64px 40px 50px;
+  display: grid; grid-template-columns: repeat(3, 1fr); gap: 26px;
+}
+.door {
+  position: relative; display: flex; flex-direction: column; text-decoration: none; color: inherit;
+  background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); padding: 30px 28px 24px;
+  box-shadow: var(--shadow); transition: transform .2s, box-shadow .2s; overflow: hidden;
+}
+.door:hover { transform: translateY(-4px); box-shadow: var(--shadow-hover); }
+.door::before { /* 書籤緞帶 */
+  content: ""; position: absolute; top: 0; right: 30px; width: 22px; height: 46px;
+  background: var(--ribbon); clip-path: polygon(0 0, 100% 0, 100% 100%, 50% 76%, 0 100%);
+}
+.door.game { --ribbon: var(--accent); }
+.door.cards { --ribbon: var(--gold); }
+.door.script { --ribbon: var(--accent-2); }
+.icon {
+  width: 64px; height: 64px; border-radius: 18px; display: grid; place-items: center; margin-bottom: 18px;
+  background: var(--surface-2); color: var(--ribbon); border: 1px solid var(--line);
+}
+.icon svg { width: 34px; height: 34px; }
+.door { align-items: center; text-align: center; padding: 44px 28px 34px; }
+.door .icon { width: 88px; height: 88px; border-radius: 26px; margin-bottom: 20px; }
+.door .icon svg { width: 46px; height: 46px; }
+.door h2 { font-family: var(--font-head); font-size: 28px; margin: 0; letter-spacing: .12em; }
+.arrow {
+  margin-top: 18px; width: 44px; height: 44px; border-radius: 50%; display: grid; place-items: center; font-weight: 700;
+  background: var(--accent); color: var(--accent-ink); box-shadow: 0 3px 0 color-mix(in srgb, var(--accent) 60%, #000);
+  transition: transform .2s;
+}
+.door:hover .arrow { transform: translateX(4px); }
+.door:active .arrow { transform: translateY(2px); box-shadow: 0 1px 0 color-mix(in srgb, var(--accent) 60%, #000); }
+.door .desc { color: var(--muted-text); margin: 0 0 16px; font-size: 14.5px; }
+.chips { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 22px; }
+.chip { font-size: 12.5px; padding: 3px 10px; border-radius: 999px; background: var(--surface-2); border: 1px solid var(--line); }
+.foot { margin-top: auto; display: flex; align-items: center; gap: 10px; padding-top: 16px; border-top: 1.5px dashed var(--line); }
+.go {
+  margin-left: auto; display: inline-flex; align-items: center; gap: 6px; min-height: 44px; padding: 0 22px;
+  border-radius: 12px; font-weight: 700; background: var(--accent); color: var(--accent-ink);
+  box-shadow: 0 3px 0 color-mix(in srgb, var(--accent) 60%, #000); transition: transform .1s;
+}
+.door:active .go { transform: translateY(2px); box-shadow: 0 1px 0 color-mix(in srgb, var(--accent) 60%, #000); }
+.note { font-size: 12.5px; color: var(--muted-text); display: flex; align-items: center; gap: 5px; }
+.lock {
+  font-size: 12.5px; color: var(--ok-text); font-weight: 700; display: inline-flex; align-items: center; gap: 5px;
+  padding: 3px 10px; border-radius: 999px; background: color-mix(in srgb, var(--accent-2) 14%, transparent);
+}
+
+.bottom { max-width: 1180px; margin: 0 auto; padding: 0 40px 40px; color: var(--muted-text); font-size: 13px; text-align: center; }
+
+/* 窄版（手機）：用容器寬度判斷 */
+@container (max-width: 760px) {
+  .top { padding: 16px 18px; }
+  .brand { font-size: 16px; white-space: nowrap; }
+  .theme-toggle .lbl { display: none; }
+  .theme-toggle button { min-width: 44px; min-height: 44px; font-size: 15px; }
+  .hero { padding: 20px 20px 22px; }
+  .hero h1 { font-size: 30px; }
+  .hero p { font-size: 14.5px; }
+  .doors { grid-template-columns: 1fr; gap: 16px; padding: 18px 16px 30px; }
+  .door { padding: 18px 20px; flex-direction: row; text-align: left; gap: 16px; }
+  .door::before { right: 18px; height: 36px; width: 18px; }
+  .door .icon { width: 56px; height: 56px; border-radius: 16px; margin: 0; }
+  .door .icon svg { width: 30px; height: 30px; }
+  .door h2 { font-size: 22px; flex: 1; letter-spacing: .08em; }
+  .arrow { margin: 0 34px 0 0; }
+  .bottom { padding: 0 20px 30px; }
+}
+
+</style>
+</head>
+<body>
+<div class="frame">
+<div class="page">
+
+  <header class="top">
+    <div class="mark">燃</div>
+    <div class="brand">燃燒中的工作區</div>
+    <div class="spacer"></div>
+    <div class="theme-toggle" id="themeToggle">
+      <button data-t="light" type="button" aria-label="白底">☀<span class="lbl"> 白底</span></button><button data-t="dark" type="button" aria-label="黑底">☾<span class="lbl"> 黑底</span></button>
+    </div>
+  </header>
+
+  <main class="doors">
+    <a class="door game" href="./game/">
+      <div class="icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="2.5" y="7" width="19" height="11" rx="5.5"/><path d="M7.5 10.5v4M5.5 12.5h4"/><circle cx="15.5" cy="11.5" r="1"/><circle cx="18" cy="13.8" r="1"/>
+        </svg>
+      </div>
+      <h2>遊戲系統</h2>
+      <span class="arrow" aria-hidden="true">→</span>
+    </a>
+
+    <a class="door cards" href="./cards/">
+      <div class="icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="3" y="5.5" width="11" height="15" rx="2" transform="rotate(-8 8.5 13)"/><rect x="10" y="3.5" width="11" height="15" rx="2" transform="rotate(8 15.5 11)"/><path d="M15.6 8.4l.9 1.8 2 .3-1.45 1.4.35 2-1.8-.95-1.8.95.35-2-1.45-1.4 2-.3z"/>
+        </svg>
+      </div>
+      <h2>卡片測試</h2>
+      <span class="arrow" aria-hidden="true">→</span>
+    </a>
+
+    <a class="door script" href="./script/">
+      <div class="icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M5 3.5h10l4 4v13H5z"/><path d="M15 3.5v4h4"/><path d="M8.5 11.5h7M8.5 14.5h7M8.5 17.5h4"/>
+        </svg>
+      </div>
+      <h2>劇本編輯</h2>
+      <span class="arrow" aria-hidden="true">→</span>
+    </a>
+  </main>
+</div>
+</div>
+
+
+<script>
+// 切換鈕：存進同一個鍵、套在 <html>，並標出目前是哪一邊。約定見 <head> 裡那段註解。
+function syncButtons() {
+  var now = document.documentElement.getAttribute('data-theme')
+  document.querySelectorAll('#themeToggle button').forEach(function (b) {
+    b.classList.toggle('on', b.dataset.t === now)
+    b.setAttribute('aria-pressed', String(b.dataset.t === now))
+  })
+}
+syncButtons()
+// 瀏覽器上一頁會從 bfcache 還原這一頁，這時 <head> 裡那段不會重跑；在劇本編輯裡改過底色的話，這裡要重讀一次。
+window.addEventListener('pageshow', function () {
+  var theme = null
+  try { theme = window.localStorage.getItem('portal-theme') } catch (e) { theme = null }
+  if (theme !== 'light' && theme !== 'dark') {
+    var dark = typeof window.matchMedia === 'function' && window.matchMedia('(prefers-color-scheme: dark)').matches
+    theme = dark ? 'dark' : 'light'
+  }
+  document.documentElement.setAttribute('data-theme', theme)
+  syncButtons()
+})
+document.getElementById('themeToggle').addEventListener('click', function (e) {
+  var btn = e.target.closest('button')
+  var t = btn && btn.dataset.t
+  if (t !== 'light' && t !== 'dark') return
+  document.documentElement.setAttribute('data-theme', t)
+  try { window.localStorage.setItem('portal-theme', t) } catch (err) { /* 記不住就算了，這一次照樣生效 */ }
+  syncButtons()
+})
+</script>
+</body>
+</html>
