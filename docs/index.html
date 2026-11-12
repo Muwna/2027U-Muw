@@ -89,11 +89,15 @@ body {
   font-size: 14px; letter-spacing: .1em; font-family: var(--font-head); opacity: .85;
 }
 
-/* 四張卡（電腦 2×2，窄版一欄） */
+/* 五張卡（電腦上三下二、每張一樣寬、下排置中；窄版一欄）。
+   六欄的格線、每張佔兩欄：上排剛好三張，下排兩張放在第 2–3、4–5 欄就置中。 */
 .doors {
   max-width: 1180px; margin: 0 auto; padding: 64px 40px 50px;
-  display: grid; grid-template-columns: repeat(2, 1fr); gap: 26px;
+  display: grid; grid-template-columns: repeat(6, 1fr); gap: 26px;
 }
+.doors > .door { grid-column: span 2; }
+.doors > .door:nth-child(4) { grid-column: 2 / span 2; }
+.doors > .door:nth-child(5) { grid-column: 4 / span 2; }
 .door {
   position: relative; display: flex; flex-direction: column; text-decoration: none; color: inherit;
   background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); padding: 30px 28px 24px;
@@ -108,6 +112,7 @@ body {
 .door.cards { --ribbon: var(--gold); }
 .door.script { --ribbon: var(--accent-2); }
 .door.packs { --ribbon: color-mix(in srgb, var(--gold) 55%, var(--accent)); }
+.door.lineup { --ribbon: color-mix(in srgb, var(--accent-2) 55%, var(--gold)); }
 .icon {
   width: 64px; height: 64px; border-radius: 18px; display: grid; place-items: center; margin-bottom: 18px;
   background: var(--surface-2); color: var(--ribbon); border: 1px solid var(--line);
@@ -152,6 +157,7 @@ body {
   .hero h1 { font-size: 30px; }
   .hero p { font-size: 14.5px; }
   .doors { grid-template-columns: 1fr; gap: 16px; padding: 18px 16px 30px; }
+  .doors > .door, .doors > .door:nth-child(4), .doors > .door:nth-child(5) { grid-column: auto; }
   .door { padding: 18px 20px; flex-direction: row; text-align: left; gap: 16px; }
   .door::before { right: 18px; height: 36px; width: 18px; }
   .door .icon { width: 56px; height: 56px; border-radius: 16px; margin: 0; }
@@ -214,6 +220,16 @@ body {
         </svg>
       </div>
       <h2>開包體驗</h2>
+      <span class="arrow" aria-hidden="true">→</span>
+    </a>
+
+    <a class="door lineup" href="./lineup/">
+      <div class="icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="3" y="4" width="4" height="4" rx="1"/><rect x="10" y="4" width="4" height="4" rx="1"/><rect x="17" y="4" width="4" height="4" rx="1"/><rect x="3" y="10" width="4" height="4" rx="1"/><rect x="10" y="10" width="4" height="4" rx="1"/><rect x="3" y="16" width="4" height="4" rx="1"/><path d="M12 18h9M17.5 15.5 20 18l-2.5 2.5"/>
+        </svg>
+      </div>
+      <h2>關卡配牌</h2>
       <span class="arrow" aria-hidden="true">→</span>
     </a>
   </main>
