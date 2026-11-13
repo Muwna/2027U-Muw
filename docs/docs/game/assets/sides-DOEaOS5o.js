@@ -1,1 +1,0 @@
-function a(){return{id:"random",decide:(e,n,r)=>r.rng.pick(n)}}const o={mine:"var(--side-mine)",foe:"var(--side-foe)"},t={mine:"我方",foe:"對方"};function i(e,n){return e===n?"mine":"foe"}function s(e){return o[e]}function c(e,n){return s(i(e,n))}function d(e,n){return t[i(e,n)]}export{c as a,d as b,s as c,a as r,i as s};
